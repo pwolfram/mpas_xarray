@@ -1,6 +1,6 @@
 mpas_xray.py                                                                                   
-==============================================================
-Wrapper to handle importing MPAS files into xray.
+===============================================================================
+Wrapper to handle importing MPAS files into xray (https://github.com/xray/xray)
 
  Module does
  1. Converts MPAS "xtime" to xray-understood time dimension via
