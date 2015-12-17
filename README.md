@@ -17,3 +17,13 @@ from mpas_xray import preprocess_mpas, remove_repeated_time_index
 ds = xray.open_mfdataset('globalStats*nc', preprocess=preprocess_mpas)
 ds = remove_repeated_time_index(ds)
 ```
+
+To test:
+
+```
+tar xzvf globalStatsShort.tgz
+python mpas_xray.py -f "globalStats*nc"
+```
+
+This outputs a simple time-series plot of Time vs. Time to test functionality.
+
