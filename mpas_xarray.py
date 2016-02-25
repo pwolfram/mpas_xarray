@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-""" 
-mpas_xray.py
+"""
+mpas_xarray.py
 ==============================================================
-Wrapper to handle importing MPAS files into xray.
+Wrapper to handle importing MPAS files into xarray.
 
  Module does
- 1. Converts MPAS "xtime" to xray-understood time dimension via 
+ 1. Converts MPAS "xtime" to xarray-understood time dimension via
     'preprocess_mpas'.
  2. Provides capability to remove redundant time entries from
     reading of multiple netCDF datasets via
@@ -13,9 +13,9 @@ Wrapper to handle importing MPAS files into xray.
 
  Example Usage:
 
->>> from mpas_xray import preprocess_mpas, remove_repeated_time_index
+>>> from mpas_xarray import preprocess_mpas, remove_repeated_time_index
 >>>
->>> ds = xray.open_mfdataset('globalStats*nc', preprocess=preprocess_mpas)
+>>> ds = xarray.open_mfdataset('globalStats*nc', preprocess=preprocess_mpas)
 >>> ds = remove_repeated_time_index(ds)
 
 Phillip J. Wolfram
@@ -26,12 +26,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import datetime
 import pandas as pd
-import xray
+import xarray as xr
 
 def preprocess_mpas(ds, yearoffset=1700): #{{{
-    """ 
+    """
     Builds corret time specification for MPAS, allowing a year offset because the
-    time must be betwee 1678 and 2262 based on the xray library.
+    time must be betwee 1678 and 2262 based on the xarray library.
 
     Phillip J. Wolfram
     12/01/2015
@@ -55,8 +55,8 @@ def preprocess_mpas(ds, yearoffset=1700): #{{{
     return ds #}}}
 
 def remove_repeated_time_index(ds): #{{{
-    """ 
-    Remove repeated times from xray dataset.
+    """
+    Remove repeated times from xarray dataset.
 
     Phillip J. Wolfram
     12/01/2015
@@ -81,8 +81,8 @@ def remove_repeated_time_index(ds): #{{{
 
     return ds #}}}
 
-def test_load_mpas_xray_datasets(path):
-    ds = xray.open_mfdataset(path, preprocess=preprocess_mpas)
+def test_load_mpas_xarray_datasets(path):
+    ds = xr.open_mfdataset(path, preprocess=preprocess_mpas)
     ds = remove_repeated_time_index(ds)
 
     # make a simple plot from the data
@@ -96,11 +96,11 @@ if __name__=="__main__":
     from optparse import OptionParser
 
     parser = OptionParser()
-    parser.add_option("-f", "--file", dest="inputfilename", help="files to be opened with xray, could be of form 'output*.nc'", metavar="FILE")
+    parser.add_option("-f", "--file", dest="inputfilename", help="files to be opened with xarray, could be of form 'output*.nc'", metavar="FILE")
 
     options, args = parser.parse_args()
     if not options.inputfilename:
         parser.error("Input filename or expression ('-f') is a required input... e.g., -f 'output*.npz'")
 
-    test_load_mpas_xray_datasets(options.inputfilename)
+    test_load_mpas_xarray_datasets(options.inputfilename)
 
