@@ -27,3 +27,15 @@ python mpas_xarray.py -f "globalStats*nc"
 
 This outputs a simple time-series plot of Time vs. Time to test functionality.
 
+For comparison with other timeseries (e.g., POP) and to avoid using a specified
+time stamp and deal in absolute time since start of recored one can:
+
+```
+from mpas_xarray import preprocess_mpas, remove_repeated_time_index
+
+def preprocess_mpas_time_days(ds):
+    return preprocess_mpas(ds, usedatetime=False)
+
+ds = xarray.open_mfdataset('globalStats*nc', preprocess=preprocess_mpas_time_days)
+ds = remove_repeated_time_index(ds)
+```

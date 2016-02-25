@@ -28,7 +28,7 @@ import datetime
 import pandas as pd
 import xarray as xr
 
-def preprocess_mpas(ds, yearoffset=1700): #{{{
+def preprocess_mpas(ds, yearoffset=1700, usedatetime=True): #{{{
     """
     Builds corret time specification for MPAS, allowing a year offset because the
     time must be betwee 1678 and 2262 based on the xarray library.
@@ -47,7 +47,10 @@ def preprocess_mpas(ds, yearoffset=1700): #{{{
             ' must be large enough to ensure datetimes larger than year 2262'
 
     # append the corret time information
-    ds.coords['Time'] = pd.to_datetime(datetimes)
+    if usedatetime:
+        ds.coords['Time'] = pd.to_datetime(datetimes)
+    else:
+        ds.coords['Time'] = np.asarray([(dt - datetimes[0]).days for dt in datetimes])
 
     # record the yroffset
     ds.attrs.__setitem__('time_yearoffset',str(yearoffset))
