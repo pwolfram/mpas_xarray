@@ -3,7 +3,7 @@ mpas_xarray.py
 Wrapper to handle importing MPAS files into xarray (https://github.com/pydata/xarray)
 
  Module does
- 1. Converts MPAS "xtime" to xarray time dimension is assigned via
+ 1. Converts MPAS "xtime" to xarray time.  Time dimension is assigned via
     `preprocess_mpas`.
  2. Provides capability to remove redundant time entries from
     reading of multiple netCDF datasets via
