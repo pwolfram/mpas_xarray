@@ -22,9 +22,9 @@ Phillip J. Wolfram
 12/01/2015
 """
 
+import datetime
 import matplotlib.pyplot as plt
 import numpy as np
-import datetime
 import pandas as pd
 import xarray as xr
 
@@ -57,7 +57,7 @@ def preprocess_mpas(ds, yearoffset=1849): #{{{
 def preprocess_mpas_timeSeriesStats(ds, yearoffset=1849): #{{{
     """
     Builds corret time specification for MPAS time series stats am fields,
-    allowing a year offset because the time must be betwee 1678 and 2262 
+    allowing a year offset because the time must be betwee 1678 and 2262
     based on the xarray library.
 
     Milena Veneziani
@@ -80,7 +80,6 @@ def preprocess_mpas_timeSeriesStats(ds, yearoffset=1849): #{{{
     ds.attrs.__setitem__('time_yearoffset',str(yearoffset))
 
     return ds #}}}
-
 
 def remove_repeated_time_index(ds): #{{{
     """
@@ -109,7 +108,7 @@ def remove_repeated_time_index(ds): #{{{
 
     return ds #}}}
 
-def test_load_mpas_xarray_datasets(path):
+def test_load_mpas_xarray_datasets(path): #{{{
     ds = xr.open_mfdataset(path, preprocess=preprocess_mpas)
     ds = remove_repeated_time_index(ds)
 
@@ -117,9 +116,9 @@ def test_load_mpas_xarray_datasets(path):
     ds.Time.plot()
     plt.show()
 
-    return
+    return #}}}
 
-def test_load_mpas_xarray_timeSeriesStats_datasets(path):
+def test_load_mpas_xarray_timeSeriesStats_datasets(path): #{{{
     ds = xr.open_mfdataset(path, preprocess=preprocess_mpas_timeSeriesStats)
     ds = remove_repeated_time_index(ds)
     ds2 = xr.open_mfdataset(path, preprocess=preprocess_mpas)
@@ -139,20 +138,26 @@ def test_load_mpas_xarray_timeSeriesStats_datasets(path):
     plt.title("Curve centered around right times (b) \n Curve shifted towards end of avg period (g)")
     plt.show()
 
-    return
+    return #}}}
 
-if __name__=="__main__":
+if __name__ == "__main__":
     from optparse import OptionParser
 
     parser = OptionParser()
-    parser.add_option("-f", "--file", dest="inputfilename", help="files to be opened with xarray, could be of form 'output*.nc'", metavar="FILE")
-    parser.add_option("--istimeavg", dest="istimeavg", help="option to use the preprocess for timeSeriesStatsAM fields")
+    parser.add_option("-f", "--file", dest="inputfilename",
+                      help="files to be opened with xarray, could be of form 'output*.nc'", \
+                      metavar="FILE")
+    parser.add_option("--istimeavg", dest="istimeavg",
+                      help="option to use the preprocess for timeSeriesStatsAM fields")
 
     options, args = parser.parse_args()
     if not options.inputfilename:
-        parser.error("Input filename or expression ('-f') is a required input... e.g., -f 'output*.npz'")
+        parser.error("Input filename or expression ('-f') is a required input..."+\
+                " e.g., -f 'output*.npz'")
 
     if not options.istimeavg:
-	test_load_mpas_xarray_datasets(options.inputfilename)
+        test_load_mpas_xarray_datasets(options.inputfilename)
     else:
-	test_load_mpas_xarray_timeSeriesStats_datasets(options.inputfilename)
+        test_load_mpas_xarray_timeSeriesStats_datasets(options.inputfilename)
+
+# vim: ai ts=4 sts=4 et sw=4 ft=python
