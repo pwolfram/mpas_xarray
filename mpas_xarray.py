@@ -60,6 +60,7 @@ def preprocess_mpas(ds, yearoffset=1850): #{{{
     12/01/2015
     """
 
+    # compute shifted datetimes
     time = np.array([''.join(atime).strip() for atime in ds.xtime.values])
     datetimes = [datetime.datetime(yearoffset + int(x[:4]), int(x[5:7]), \
             int(x[8:10]), int(x[11:13]), int(x[14:16]), int(x[17:19])) for x in time]
@@ -67,9 +68,8 @@ def preprocess_mpas(ds, yearoffset=1850): #{{{
 
     # append the corret time information
     ds.coords['Time'] = pd.to_datetime(datetimes)
-
     # record the yroffset
-    ds.attrs.__setitem__('time_yearoffset',str(yearoffset))
+    ds.attrs.__setitem__('time_yearoffset', str(yearoffset))
 
     return ds #}}}
 
@@ -84,23 +84,24 @@ def preprocess_mpas_timeSeriesStats(ds, yearoffset=1849, monthoffset=12, dayoffs
     constant over the entire model simulation. Typical time-slice experiments
     are run with 1850 (pre-industrial) conditions and 2000 (present-day)
     conditions. Hence, a default date offset is chosen to be yearoffset=1849,
-    monthoffset=12, dayoffset=31 (day 1 of an 1850 run will be seen as 
+    monthoffset=12, dayoffset=31 (day 1 of an 1850 run will be seen as
     Jan 1st, 1850).
 
     Milena Veneziani
     04/18/2016
     """
 
+    # compute shifted datetimes
     daysSinceStart = ds.timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1
-    time = [datetime.datetime(yearoffset,monthoffset,dayoffset) + datetime.timedelta(x) for x in daysSinceStart.values]
+    time = [datetime.datetime(yearoffset, monthoffset, dayoffset) + datetime.timedelta(x)
+            for x in daysSinceStart.values]
     datetimes = pd.to_datetime(time)
     assert_valid_datetimes(datetimes, yearoffset)
 
     # append the corret time information
     ds.coords['Time'] = datetimes
-
     # record the yroffset
-    ds.attrs.__setitem__('time_yearoffset',str(yearoffset))
+    ds.attrs.__setitem__('time_yearoffset', str(yearoffset))
 
     return ds #}}}
 
@@ -116,15 +117,15 @@ def remove_repeated_time_index(ds): #{{{
     index = range(len(time))
     uniquetime = set()
     remove = []
-    for id, atime in enumerate(time):
+    for tid, atime in enumerate(time):
         if atime not in uniquetime:
             uniquetime.add(atime)
         else:
-            remove.append(id)
+            remove.append(tid)
 
     remove.reverse()
-    for id in remove:
-        index.pop(id)
+    for tid in remove:
+        index.pop(tid)
 
     # remove repeated indices
     ds = ds.isel(Time=index)
@@ -148,16 +149,18 @@ def test_load_mpas_xarray_timeSeriesStats_datasets(path): #{{{
     ds2 = remove_repeated_time_index(ds2)
 
     # make a simple plot from the data
-    sel_data(ds).plot()
-    sel_data(ds2).plot()
-    plt.title("Curve centered around right times (b) \n Curve shifted towards end of avg period (g)")
+    def plot_data(ds):
+        var = ds["timeSeriesStatsMonthly_avg_iceAreaCell_1"]
+        return var.where(var > 0).mean('nCells').plot()
+
+    plot_data(ds)
+    plot_data(ds2)
+    plt.title("Curve centered around right times (b) \n "+\
+              "Curve shifted towards end of avg period (g)")
     plt.show()
 
     return #}}}
 
-def sel_data(ds):
-    var = ds["timeSeriesStatsMonthly_avg_iceAreaCell_1"]
-    return var.where(var > 0).mean('nCells')
 
 if __name__ == "__main__":
     from optparse import OptionParser
