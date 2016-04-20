@@ -133,20 +133,26 @@ def test_load_mpas_xarray_timeSeriesStats_datasets(path): #{{{
     ds2 = remove_repeated_time_index(ds2)
 
     # make a simple plot from the data
-    var = ds["timeSeriesStatsMonthly_avg_iceAreaCell_1"]
-    var2 = ds2["timeSeriesStatsMonthly_avg_iceAreaCell_1"]
-    ind_ice  = var > 0
-    ind_ice2 = var2 > 0
-    var_ice  = var.where(ind_ice)
-    var_ice =  var_ice.mean('nCells')
-    var2_ice = var2.where(ind_ice2)
-    var2_ice = var2_ice.mean('nCells')
-    var_ice.plot()
-    var2_ice.plot()
+#    var = ds["timeSeriesStatsMonthly_avg_iceAreaCell_1"]
+#    var2 = ds2["timeSeriesStatsMonthly_avg_iceAreaCell_1"]
+#    ind_ice  = var > 0
+#    ind_ice2 = var2 > 0
+#    var_ice  = var.where(ind_ice)
+#    var_ice =  var_ice.mean('nCells')
+#    var2_ice = var2.where(ind_ice2)
+#    var2_ice = var2_ice.mean('nCells')
+#    var_ice.plot()
+#    var2_ice.plot()
+    sel_data(ds).plot()
+    sel_data(ds2).plot()
     plt.title("Curve centered around right times (b) \n Curve shifted towards end of avg period (g)")
     plt.show()
 
     return #}}}
+
+def sel_data(ds):
+    var = ds["timeSeriesStatsMonthly_avg_iceAreaCell_1"]
+    return var.where(var > 0).mean('nCells')
 
 if __name__ == "__main__":
     from optparse import OptionParser
