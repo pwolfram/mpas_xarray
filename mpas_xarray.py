@@ -29,6 +29,20 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+def assert_valid_datetimes(datetimes, yearoffset): #{{{
+    """
+    Ensure that datatimes are compatable with xarray
+
+    Phillip J. Wolfram
+    04/20/2016
+    """
+    assert datetimes[0].year > 1678, 'ERROR: yearoffset=%s'%(yearoffset) + \
+            ' must be large enough to ensure datetimes larger than year 1678'
+    assert datetimes[-1].year < 2262, 'ERROR: yearoffset=%s'%(yearoffset) + \
+            ' must be large enough to ensure datetimes larger than year 2262'
+
+    return #}}}
+
 def preprocess_mpas(ds, yearoffset=1849): #{{{
     """
     Builds corret time specification for MPAS, allowing a year offset because the
@@ -41,11 +55,7 @@ def preprocess_mpas(ds, yearoffset=1849): #{{{
     time = np.array([''.join(atime).strip() for atime in ds.xtime.values])
     datetimes = [datetime.datetime(yearoffset + int(x[:4]), int(x[5:7]), \
             int(x[8:10]), int(x[11:13]), int(x[14:16]), int(x[17:19])) for x in time]
-    # make sure  date times are set up properly
-    assert datetimes[0].year > 1678, 'ERROR: yearoffset=%s'%(yearoffset) + \
-            ' must be large enough to ensure datetimes larger than year 1678'
-    assert datetimes[-1].year < 2262, 'ERROR: yearoffset=%s'%(yearoffset) + \
-            ' must be large enough to ensure datetimes larger than year 2262'
+    assert_valid_datetimes(datetimes, yearoffset)
 
     # append the corret time information
     ds.coords['Time'] = pd.to_datetime(datetimes)
@@ -76,11 +86,7 @@ def preprocess_mpas_timeSeriesStats(ds, yearoffset=1849, monthoffset=12, dayoffs
     daysSinceStart = ds.timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1
     time = [datetime.datetime(yearoffset,monthoffset,dayoffset) + datetime.timedelta(x) for x in daysSinceStart.values]
     datetimes = pd.to_datetime(time)
-    # make sure  date times are set up properly
-    assert datetimes[0].year > 1678, 'ERROR: yearoffset=%s'%(yearoffset) + \
-            ' must be large enough to ensure datetimes larger than year 1678'
-    assert datetimes[-1].year < 2262, 'ERROR: yearoffset=%s'%(yearoffset) + \
-            ' must be large enough to ensure datetimes larger than year 2262'
+    assert_valid_datetimes(datetimes, yearoffset)
 
     # append the corret time information
     ds.coords['Time'] = datetimes
