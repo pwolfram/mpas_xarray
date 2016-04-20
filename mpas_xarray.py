@@ -31,7 +31,7 @@ import xarray as xr
 def preprocess_mpas(ds, yearoffset=1849): #{{{
     """
     Builds corret time specification for MPAS, allowing a year offset because the
-    time must be betwee 1678 and 2262 based on the xarray library.
+    time must be between 1678 and 2262 based on the xarray library.
 
     Phillip J. Wolfram
     12/01/2015
@@ -54,18 +54,26 @@ def preprocess_mpas(ds, yearoffset=1849): #{{{
 
     return ds #}}}
 
-def preprocess_mpas_timeSeriesStats(ds, yearoffset=1849): #{{{
+def preprocess_mpas_timeSeriesStats(ds, yearoffset=1849, monthoffset=12, dayoffset=31): #{{{
     """
-    Builds corret time specification for MPAS time series stats am fields,
-    allowing a year offset because the time must be betwee 1678 and 2262
+    Builds corret time specification for MPAS timeSeriesStats analysis member fields,
+    allowing a date offset because the time must be between 1678 and 2262
     based on the xarray library.
+
+    This time specification is relevant for so-called time-slice model
+    experiments, in which CO2 and greenhouse gas conditions are kept
+    constant over the entire model simulation. Typical time-slice experiments
+    are run with 1850 (pre-industrial) conditions and 2000 (present-day)
+    conditions. Hence, a default date offset is chosen to be yearoffset=1849,
+    monthoffset=12, dayoffset=31 (day 1 of an 1850 run will be seen as 
+    Jan 1st, 1850).
 
     Milena Veneziani
     04/18/2016
     """
 
     daysSinceStart = ds.timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1
-    time = [datetime.datetime(yearoffset,12,31) + datetime.timedelta(x) for x in daysSinceStart.values]
+    time = [datetime.datetime(yearoffset,monthoffset,dayoffset) + datetime.timedelta(x) for x in daysSinceStart.values]
     datetimes = pd.to_datetime(time)
     # make sure  date times are set up properly
     assert datetimes[0].year > 1678, 'ERROR: yearoffset=%s'%(yearoffset) + \

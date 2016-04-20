@@ -3,14 +3,11 @@ mpas_xarray.py
 Wrapper to handle importing MPAS files into xarray (https://github.com/pydata/xarray)
 
  Module does
- 1. Converts MPAS "xtime" to xarray time.  Time dimension is assigned via
-    `preprocess_mpas`.
- 2. Converts MPAS "timeSinceStartOfSim" to xarray time optionally for MPAS fields coming from the
-    timeSeriesStatsAM.  Time dimension is assigned via 
-    `preprocess_mpas_timeSeriesStats`.
- 3. Provides capability to remove redundant time entries from
-    reading of multiple netCDF datasets via
-    `remove_repeated_time_index`.
+ 1. Converts MPAS "xtime" to xarray time.  Time dimension is assigned via `preprocess_mpas`.
+ 2. Converts MPAS "timeSinceStartOfSim" to xarray time for MPAS fields coming from the
+    timeSeriesStatsAM.  Time dimension is assigned via `preprocess_mpas_timeSeriesStats`.
+ 3. Provides capability to remove redundant time entries from reading of multiple netCDF 
+    datasets via `remove_repeated_time_index`.
 
  Example Usage:
 
@@ -49,4 +46,3 @@ python mpas_xarray.py -f "am.mpas-cice*nc" --istimeavg "true"
 This plots a short time series of global average ice concentration, showing the correctly centered curve
 (derived using preprocess_mpas_timeSeriesStats) and the curve incorrectly shifted toward the end of the 
 time averaging period (derived using preprocess_mpas).
-
