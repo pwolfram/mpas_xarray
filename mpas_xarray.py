@@ -43,10 +43,18 @@ def assert_valid_datetimes(datetimes, yearoffset): #{{{
 
     return #}}}
 
-def preprocess_mpas(ds, yearoffset=1849): #{{{
+def preprocess_mpas(ds, yearoffset=1850): #{{{
     """
     Builds corret time specification for MPAS, allowing a year offset because the
     time must be between 1678 and 2262 based on the xarray library.
+
+    The time specification is relevant for so-called time-slice model
+    experiments, in which CO2 and greenhouse gas conditions are kept
+    constant over the entire model simulation. Typical time-slice experiments
+    are run with 1850 (pre-industrial) conditions and 2000 (present-day)
+    conditions. Hence, a default date offset is chosen to be yearoffset=1849,
+    monthoffset=12, dayoffset=31 (day 1 of an 1850 run will be seen as
+    Jan 1st, 1850).
 
     Phillip J. Wolfram
     12/01/2015
