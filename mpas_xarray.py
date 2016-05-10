@@ -29,6 +29,31 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+def subset_variables(ds, vlist): #{{{
+    """
+    Reduces an xarray dataset ds to only contain the variables in vlist.
+
+    Phillip J. Wolfram
+    05/05/2016
+    """
+
+    # get set of variables to drop (all ds variables not in vlist)
+    dropvars = set(ds.data_vars.keys()) - set(vlist)
+
+    # drop spurious variables
+    ds = ds.drop(dropvars)
+
+    # must also drop all coordinates that are not associated with the variables
+    coords = set()
+    for avar in ds.data_vars.keys():
+        coords |= set(ds[avar].coords.keys())
+    dropcoords = set(ds.coords.keys()) - coords
+
+    # drop spurious coordinates
+    ds = ds.drop(dropcoords)
+
+    return ds #}}}
+
 def assert_valid_datetimes(datetimes, yearoffset): #{{{
     """
     Ensure that datatimes are compatable with xarray
@@ -43,7 +68,28 @@ def assert_valid_datetimes(datetimes, yearoffset): #{{{
 
     return #}}}
 
-def preprocess_mpas(ds, yearoffset=1850): #{{{
+def general_processing(ds, datetimes, yearoffset, onlyvars): #{{{
+    """
+    Simple commonly used preprocessing commands general to multiple
+    preprocessing routines.
+
+    Phillip J. Wolfram
+    05/05/2016
+    """
+
+    assert_valid_datetimes(datetimes, yearoffset)
+
+    # append the corret time information
+    ds.coords['Time'] = pd.to_datetime(datetimes)
+    # record the yroffset
+    ds.attrs.__setitem__('time_yearoffset', str(yearoffset))
+
+    if onlyvars is not None:
+        ds = subset_variables(ds, onlyvars)
+
+    return ds #}}}
+
+def preprocess_mpas(ds, yearoffset=1850, onlyvars=None): #{{{
     """
     Builds corret time specification for MPAS, allowing a year offset because the
     time must be between 1678 and 2262 based on the xarray library.
@@ -56,24 +102,25 @@ def preprocess_mpas(ds, yearoffset=1850): #{{{
     monthoffset=12, dayoffset=31 (day 1 of an 1850 run will be seen as
     Jan 1st, 1850).
 
+    The onlyvars option reduces the dataset to only include variables in the onlyvars list.
+    If onlyvars=None, include all dataset variables.
+
     Phillip J. Wolfram
-    12/01/2015
+    05/05/2016
     """
 
     # compute shifted datetimes
     time = np.array([''.join(atime).strip() for atime in ds.xtime.values])
     datetimes = [datetime.datetime(yearoffset + int(x[:4]), int(x[5:7]), \
             int(x[8:10]), int(x[11:13]), int(x[14:16]), int(x[17:19])) for x in time]
-    assert_valid_datetimes(datetimes, yearoffset)
 
-    # append the corret time information
-    ds.coords['Time'] = pd.to_datetime(datetimes)
-    # record the yroffset
-    ds.attrs.__setitem__('time_yearoffset', str(yearoffset))
+    ds = general_processing(ds, datetimes, yearoffset, onlyvars)
 
     return ds #}}}
 
-def preprocess_mpas_timeSeriesStats(ds, yearoffset=1849, monthoffset=12, dayoffset=31): #{{{
+def preprocess_mpas_timeSeriesStats(ds,
+        timestr='timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1',
+        yearoffset=1849, monthoffset=12, dayoffset=31, onlyvars=None): #{{{
     """
     Builds corret time specification for MPAS timeSeriesStats analysis member fields,
     allowing a date offset because the time must be between 1678 and 2262
@@ -87,21 +134,19 @@ def preprocess_mpas_timeSeriesStats(ds, yearoffset=1849, monthoffset=12, dayoffs
     monthoffset=12, dayoffset=31 (day 1 of an 1850 run will be seen as
     Jan 1st, 1850).
 
-    Milena Veneziani
-    04/18/2016
+    The onlyvars option reduces the dataset to only include variables in the onlyvars list.
+    If onlyvars=None, include all dataset variables.
+
+    Milena Veneziani and Phillip J. Wolfram
+    05/05/2016
     """
 
     # compute shifted datetimes
-    daysSinceStart = ds.timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1
-    time = [datetime.datetime(yearoffset, monthoffset, dayoffset) + datetime.timedelta(x)
-            for x in daysSinceStart.values]
-    datetimes = pd.to_datetime(time)
-    assert_valid_datetimes(datetimes, yearoffset)
+    daysSinceStart = ds[timestr]
+    datetimes = [datetime.datetime(yearoffset, monthoffset, dayoffset) + datetime.timedelta(x)
+                 for x in daysSinceStart.values]
 
-    # append the corret time information
-    ds.coords['Time'] = datetimes
-    # record the yroffset
-    ds.attrs.__setitem__('time_yearoffset', str(yearoffset))
+    ds = general_processing(ds, datetimes, yearoffset, onlyvars)
 
     return ds #}}}
 
