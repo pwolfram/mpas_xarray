@@ -1,0 +1,7 @@
+recursive-include mpas_xarray *.py
+
+include setup.py
+include README.rst
+include LICENSE.txt
+include MANIFEST.in
+include requirements.txt
