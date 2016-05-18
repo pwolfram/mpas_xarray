@@ -2,7 +2,11 @@ mpas\_xarray.py
 ===============
 
 Wrapper to handle importing MPAS files into xarray
-(https://github.com/pydata/xarray)
+(https://github.com/pydata/xarray).  Module can be installed via
+
+::
+
+    pip -v install git+ssh://git@github.com/pwolfram/mpas_xarray
 
 The module does the following:
 
