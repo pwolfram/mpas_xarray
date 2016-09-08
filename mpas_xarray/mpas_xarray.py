@@ -68,6 +68,20 @@ def assert_valid_datetimes(datetimes, yearoffset): #{{{
 
     return #}}}
 
+def ensure_list(alist): #{{{
+    """
+    Ensure that variables used as a list are actually lists.
+
+    Phillip J. Wolfram
+    09/08/2016
+    """
+
+    if isinstance(alist, str):
+        #print 'Warning, converting %s to a list'%(alist)
+        alist = [alist]
+
+    return alist #}}}
+
 def general_processing(ds, datetimes, yearoffset, onlyvars): #{{{
     """
     Simple commonly used preprocessing commands general to multiple
@@ -85,7 +99,7 @@ def general_processing(ds, datetimes, yearoffset, onlyvars): #{{{
     ds.attrs.__setitem__('time_yearoffset', str(yearoffset))
 
     if onlyvars is not None:
-        ds = subset_variables(ds, onlyvars)
+        ds = subset_variables(ds, ensure_list(onlyvars))
 
     return ds #}}}
 
