@@ -8,7 +8,7 @@ Wrapper to handle importing MPAS files into xarray.
  1. Converts MPAS "xtime" to xarray time.  Time dimension is assigned via
     `preprocess_mpas`.
  2. Converts MPAS "timeSinceStartOfSim" to xarray time for MPAS fields coming from the
-    timeSeriesStatsAM.  Time dimension is assigned via `preprocess_mpas_timeSeriesStats`.
+    timeSeriesStatsAM.  Time dimension is assigned via `preprocess_mpas(..., timeSeriesStats=True)`.
  3. Provides capability to remove redundant time entries from reading of multiple netCDF
     datasets via `remove_repeated_time_index`.
 
@@ -103,10 +103,12 @@ def general_processing(ds, datetimes, yearoffset, onlyvars): #{{{
 
     return ds #}}}
 
-def preprocess_mpas(ds, yearoffset=1850, onlyvars=None): #{{{
+def preprocess_mpas(ds, onlyvars=None, vertLevel=None,
+        timeSeriesStats=False, timestr=None,
+        yearoffset=1849, monthoffset=12, dayoffset=31): #{{{
     """
-    Builds corret time specification for MPAS, allowing a year offset because the
-    time must be between 1678 and 2262 based on the xarray library.
+    Builds correct time specification for MPAS, allowing a date offset because
+    the time must be between 1678 and 2262 based on the xarray library.
 
     The time specification is relevant for so-called time-slice model
     experiments, in which CO2 and greenhouse gas conditions are kept
@@ -116,49 +118,40 @@ def preprocess_mpas(ds, yearoffset=1850, onlyvars=None): #{{{
     monthoffset=12, dayoffset=31 (day 1 of an 1850 run will be seen as
     Jan 1st, 1850).
 
-    The onlyvars option reduces the dataset to only include variables in the onlyvars list.
-    If onlyvars=None, include all dataset variables.
+    Note, for use with the timeSeriesStats analysis member fields set
+    timeSeriesStats=True and assign timestr.
 
-    Phillip J. Wolfram
-    05/05/2016
-    """
-
-    # compute shifted datetimes
-    time = np.array([''.join(atime).strip() for atime in ds.xtime.values])
-    datetimes = [datetime.datetime(yearoffset + int(x[:4]), int(x[5:7]), \
-            int(x[8:10]), int(x[11:13]), int(x[14:16]), int(x[17:19])) for x in time]
-
-    ds = general_processing(ds, datetimes, yearoffset, onlyvars)
-
-    return ds #}}}
-
-def preprocess_mpas_timeSeriesStats(ds,
-        timestr='timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1',
-        yearoffset=1849, monthoffset=12, dayoffset=31, onlyvars=None, vertLevel=None): #{{{
-    """
-    Builds corret time specification for MPAS timeSeriesStats analysis member fields,
-    allowing a date offset because the time must be between 1678 and 2262
-    based on the xarray library.
-
-    This time specification is relevant for so-called time-slice model
-    experiments, in which CO2 and greenhouse gas conditions are kept
-    constant over the entire model simulation. Typical time-slice experiments
-    are run with 1850 (pre-industrial) conditions and 2000 (present-day)
-    conditions. Hence, a default date offset is chosen to be yearoffset=1849,
-    monthoffset=12, dayoffset=31 (day 1 of an 1850 run will be seen as
-    Jan 1st, 1850).
+    The timestr variable designates the appropriate variable to be used as the
+    unlimited dimension for xarray concatenation.  For MPAS-O
+    timestr='time_avg_daysSinceStartOfSim' and for MPAS-Seaice
+    timestr='timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1'.
 
     The onlyvars option reduces the dataset to only include variables in the onlyvars list.
     If onlyvars=None, include all dataset variables.
 
-    Milena Veneziani and Phillip J. Wolfram
-    05/05/2016
+    Phillip J. Wolfram, Milena Veneziani, and Luke van Roekel
+    09/09/2016
     """
 
+    # ensure timestr is specified used when timeSeriesStats=True
+    if timeSeriesStats and timestr is None:
+        assert False, 'A value for timestr is required, e.g., ' + \
+                'for MPAS-O: time_avg_daysSinceStartOfSim, and ' + \
+                'for MPAS-Seaice: timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1'
+
     # compute shifted datetimes
-    daysSinceStart = ds[timestr]
-    datetimes = [datetime.datetime(yearoffset, monthoffset, dayoffset) + datetime.timedelta(x)
-                 for x in daysSinceStart.values]
+    if timeSeriesStats:
+        daysSinceStart = ds[timestr]
+        datetimes = [datetime.datetime(yearoffset, monthoffset, dayoffset) + datetime.timedelta(x)
+                     for x in daysSinceStart.values]
+    else:
+        time = np.array([''.join(atime).strip() for atime in ds.xtime.values])
+        # note the one year difference here (e.g., 12-31 of 1849 is essentially
+        # 1850) breaks previous convention used if timeSeriesStats=False
+        # yearoffset=1849 instead of prior 1950
+        # comments above can be cleaned up on transition to v1.0
+        datetimes = [datetime.datetime(yearoffset + int(x[:4]), int(x[5:7]), \
+                int(x[8:10]), int(x[11:13]), int(x[14:16]), int(x[17:19])) for x in time]
 
     if vertLevel is not None:
         ds = ds.sel(nVertLevels = vertLevel)
@@ -195,7 +188,7 @@ def remove_repeated_time_index(ds): #{{{
     return ds #}}}
 
 def test_load_mpas_xarray_datasets(path): #{{{
-    ds = xr.open_mfdataset(path, preprocess=preprocess_mpas)
+    ds = xr.open_mfdataset(path, preprocess=lambda x: preprocess_mpas(x, yearoffset=1850))
     ds = remove_repeated_time_index(ds)
 
     # make a simple plot from the data
@@ -205,9 +198,10 @@ def test_load_mpas_xarray_datasets(path): #{{{
     return #}}}
 
 def test_load_mpas_xarray_timeSeriesStats_datasets(path): #{{{
-    ds = xr.open_mfdataset(path, preprocess=preprocess_mpas_timeSeriesStats)
+    ds = xr.open_mfdataset(path, preprocess=lambda x: preprocess_mpas(x,
+        timeSeriesStats=True, timestr='timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1'))
     ds = remove_repeated_time_index(ds)
-    ds2 = xr.open_mfdataset(path, preprocess=preprocess_mpas)
+    ds2 = xr.open_mfdataset(path, preprocess=lambda x: preprocess_mpas(x, yearoffset=1850))
     ds2 = remove_repeated_time_index(ds2)
 
     # make a simple plot from the data

@@ -14,7 +14,7 @@ The module does the following:
    assigned via ``preprocess_mpas``.
 2. Converts MPAS "timeSinceStartOfSim"
    to xarray time for MPAS fields coming from the timeSeriesStatsAM. Time
-   dimension is assigned via ``preprocess_mpas_timeSeriesStats``.
+   dimension is assigned via ``preprocess_mpas(...,timeSeriesStats=True)``.
 3. Provides capability to remove redundant time entries from reading of
    multiple netCDF datasets via ``remove_repeated_time_index``.
 
@@ -22,6 +22,7 @@ Example Usage:
 
 ::
 
+    import xarray
     from mpas_xarray import preprocess_mpas, remove_repeated_time_index
 
     ds = xarray.open_mfdataset('globalStats*nc', preprocess=preprocess_mpas)
@@ -41,9 +42,13 @@ Example Usage for timeSeriesStatsAM fields:
 
 ::
 
-    from mpas_xarray import preprocess_mpas_timeSeriesStats, remove_repeated_time_index
+    import xarray
+    from mpas_xarray import preprocess_mpas, remove_repeated_time_index
 
-    ds = xarray.open_mfdataset('am.mpas-cice*nc', preprocess=preprocess_mpas_timeSeriesStats)
+    def preprocess(x, timestr='timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1'):
+      return preprocess_mpas(x, timeSeriesStats=True, timestr=timestr)
+
+    ds = xarray.open_mfdataset('am.mpas-cice*nc', preprocess=preprocess)
     ds = remove_repeated_time_index(ds)
 
 To test:
