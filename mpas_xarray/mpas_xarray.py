@@ -103,6 +103,22 @@ def general_processing(ds, datetimes, yearoffset, onlyvars): #{{{
 
     return ds #}}}
 
+def time_series_stat_time(timestr, daysSinceStart): #{{{
+    """
+    Modifies daysSinceStart for uniformity based on between differences
+    between MPAS-O and MPAS-Seaice.
+
+    Phillip J. Wolfram
+    09/09/2016
+    """
+
+    if (timestr == 'timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1'):
+        return [datetime.timedelta(x) for x in daysSinceStart.values]
+    else:
+        return pd.to_timedelta(daysSinceStart.values, unit='ns')
+
+    #}}}
+
 def preprocess_mpas(ds, onlyvars=None, vertLevel=None,
         timeSeriesStats=False, timestr=None,
         yearoffset=1849, monthoffset=12, dayoffset=31): #{{{
@@ -134,16 +150,16 @@ def preprocess_mpas(ds, onlyvars=None, vertLevel=None,
     """
 
     # ensure timestr is specified used when timeSeriesStats=True
-    if timeSeriesStats and timestr is None:
-        assert False, 'A value for timestr is required, e.g., ' + \
-                'for MPAS-O: time_avg_daysSinceStartOfSim, and ' + \
-                'for MPAS-Seaice: timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1'
-
-    # compute shifted datetimes
     if timeSeriesStats:
+        if timestr is None:
+            assert False, 'A value for timestr is required, e.g., ' + \
+                    'for MPAS-O: time_avg_daysSinceStartOfSim, and ' + \
+                    'for MPAS-Seaice: timeSeriesStatsMonthly_avg_daysSinceStartOfSim_1'
+
+        # compute shifted datetimes
         daysSinceStart = ds[timestr]
-        datetimes = [datetime.datetime(yearoffset, monthoffset, dayoffset) + datetime.timedelta(x)
-                     for x in daysSinceStart.values]
+        datetimes = [datetime.datetime(yearoffset, monthoffset, dayoffset) + x
+                     for x in time_series_stat_time(timestr, daysSinceStart)]
     else:
         time = np.array([''.join(atime).strip() for atime in ds.xtime.values])
         # note the one year difference here (e.g., 12-31 of 1849 is essentially
