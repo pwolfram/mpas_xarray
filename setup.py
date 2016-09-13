@@ -4,7 +4,7 @@ import os
 from setuptools import setup
 
 setup(name='mpas_xarray',
-        version='0.0.3',
+        version='0.0.4',
         description='Wrapper for xarray to interface with MPAS *.nc files',
         url='https://github.com/pwolfram/mpas_xarray/',
         maintainer='Phillip J. Wolfram',

@@ -68,6 +68,26 @@ def assert_valid_datetimes(datetimes, yearoffset): #{{{
 
     return #}}}
 
+def assert_valid_selections(selvals, iselvals): #{{{
+    """
+    Ensure that dataset selections are compatable.
+
+    It is possible selVals and iselVals may conflict, e.g., selVals restricts
+    the dataset to a point where iselvals is unable to be satisfied, hence a
+    check is needed to make sure that keys in selvals and iselvals are unique.
+
+    Phillip J. Wolfram
+    09/13/2016
+    """
+
+    if (selvals is not None) and (iselvals is not None):
+        duplicatedkeys = len(np.intersect1d(selvals.keys(), iselvals.keys()))
+        assert len(duplicatedkeys) == 0, \
+                'Duplicated selection of variables %s was found!  ' + \
+                'Selection is ambiguous.'%(duplicatedkeys)
+
+    return #}}}
+
 def ensure_list(alist): #{{{
     """
     Ensure that variables used as a list are actually lists.
@@ -81,27 +101,6 @@ def ensure_list(alist): #{{{
         alist = [alist]
 
     return alist #}}}
-
-def general_processing(ds, datetimes, yearoffset, onlyvars): #{{{
-    """
-    Simple commonly used preprocessing commands general to multiple
-    preprocessing routines.
-
-    Phillip J. Wolfram
-    05/05/2016
-    """
-
-    assert_valid_datetimes(datetimes, yearoffset)
-
-    # append the corret time information
-    ds.coords['Time'] = pd.to_datetime(datetimes)
-    # record the yroffset
-    ds.attrs.__setitem__('time_yearoffset', str(yearoffset))
-
-    if onlyvars is not None:
-        ds = subset_variables(ds, ensure_list(onlyvars))
-
-    return ds #}}}
 
 def time_series_stat_time(timestr, daysSinceStart): #{{{
     """
@@ -119,7 +118,7 @@ def time_series_stat_time(timestr, daysSinceStart): #{{{
 
     #}}}
 
-def preprocess_mpas(ds, onlyvars=None, vertLevel=None,
+def preprocess_mpas(ds, onlyvars=None, selvals=None, iselvals=None,
         timeSeriesStats=False, timestr=None,
         yearoffset=1849, monthoffset=12, dayoffset=31): #{{{
     """
@@ -145,8 +144,13 @@ def preprocess_mpas(ds, onlyvars=None, vertLevel=None,
     The onlyvars option reduces the dataset to only include variables in the onlyvars list.
     If onlyvars=None, include all dataset variables.
 
+    iselvals and selvals provide index and value-based slicing operations for individual datasets
+    prior to their merge via xarray.
+    iselvals is a dictionary, e.g., iselvals = {'nVertLevels': slice(0,3), 'nCells': cellIDs}
+    selvals is a dictionary, e.g., selvals = {'cellLon': 180.0}
+
     Phillip J. Wolfram, Milena Veneziani, and Luke van Roekel
-    09/09/2016
+    09/13/2016
     """
 
     # ensure timestr is specified used when timeSeriesStats=True
@@ -169,10 +173,23 @@ def preprocess_mpas(ds, onlyvars=None, vertLevel=None,
         datetimes = [datetime.datetime(yearoffset + int(x[:4]), int(x[5:7]), \
                 int(x[8:10]), int(x[11:13]), int(x[14:16]), int(x[17:19])) for x in time]
 
-    if vertLevel is not None:
-        ds = ds.sel(nVertLevels = vertLevel)
+    assert_valid_datetimes(datetimes, yearoffset)
 
-    ds = general_processing(ds, datetimes, yearoffset, onlyvars)
+    # append the corret time information
+    ds.coords['Time'] = pd.to_datetime(datetimes)
+    # record the yroffset
+    ds.attrs.__setitem__('time_yearoffset', str(yearoffset))
+
+    if onlyvars is not None:
+        ds = subset_variables(ds, ensure_list(onlyvars))
+
+    assert_valid_selections(selvals, iselvals)
+
+    if selvals is not None:
+        ds = ds.sel(**selvals)
+
+    if iselvals is not None:
+        ds = ds.isel(**iselvals)
 
     return ds #}}}
 
